@@ -67,7 +67,7 @@ export async function verifyAndActivateCard(cardId: number, cardCVC: string, pas
     const registeredCard = await findById(cardId);
     if (!registeredCard) throw { type: "card not found", code: 404 };
 
-    verifyBlockAndExpiration(registeredCard);
+    verifyBlockAndExpiration(registeredCard, true);
 
     if (registeredCard.password !== null) throw { type: "card is already active", code: 409 };
 
@@ -83,10 +83,19 @@ export async function verifyAndBlockCard(cardId: number, password: string) {
     const card = await findById(cardId);
     if (!card) throw { type: "card not found", code: 404 };
 
-    verifyBlockAndExpiration(card);
+    verifyBlockAndExpiration(card, true);
 
     const correctPassword = bcrypt.compareSync(password, card.password);
     if (!correctPassword) throw { type: "incorrect password", code: 401 };
 
     await update(cardId, { isBlocked: true });
+}
+
+export async function verifyAndUnblockCard(cardId: number, password: string) {
+    const card = await findById(cardId);
+    if (!card) throw { type: "card not found", code: 404 };
+
+    verifyBlockAndExpiration(card, false);
+
+    await update(cardId, { isBlocked: false });
 }

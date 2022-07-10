@@ -28,3 +28,11 @@ export async function blockCard(req: Request, res: Response) {
 
     res.sendStatus(200);
 }
+
+export async function unblockCard(req: Request, res: Response) {
+    const { cardId, password }: { cardId: number, password: string } = req.body;
+
+    await service.verifyAndUnblockCard(cardId, password);
+
+    res.sendStatus(200);
+}
