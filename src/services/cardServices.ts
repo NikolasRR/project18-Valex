@@ -1,12 +1,14 @@
 import { faker } from "@faker-js/faker";
 import dayjs from "dayjs";
 import Cryptr from "cryptr";
+import bcrypt from "bcrypt";
 
-import { insert, TransactionTypes } from "../repositories/cardRepository.js";
+import { findById, insert, TransactionTypes, update } from "../repositories/cardRepository.js";
+import { response } from "express";
 
 
-export async function generateCardInfoAndCard(employee: {fullName: string, id: number}, cardType: TransactionTypes) {
-    const cryptr = new Cryptr('myTotallySecretKey');
+export async function generateCardInfoAndCard(employee: { fullName: string, id: number }, cardType: TransactionTypes) {
+    const cryptr = new Cryptr(process.env.CRYPTR_KEY);
     const cardNumber = faker.finance.creditCardNumber('#### #### #### ####');
     const cardCVC = faker.finance.creditCardCVV();
     const encrytedCVC = cryptr.encrypt(cardCVC);
@@ -25,7 +27,7 @@ export async function generateCardInfoAndCard(employee: {fullName: string, id: n
 
     const cardName = nameArray.join(' ');
 
-    const cardData =  {
+    const cardData = {
         employeeId: employee.id,
         number: cardNumber,
         cardholderName: cardName,
@@ -40,5 +42,26 @@ export async function generateCardInfoAndCard(employee: {fullName: string, id: n
 
     await insert(cardData);
     
-    return;
+    return { number: cardNumber, securityCode: cardCVC }; 
+}
+
+export async function verifyAndActivateCard(cardId: number, cardCVC: string, password: string) {
+    const cryptr = new Cryptr(process.env.CRYPTR_KEY);
+
+    const registeredCard = await findById(cardId);
+    if (!registeredCard) throw { type: "card with suplied ID not found", code: 404 };
+
+    const cardED = dayjs(registeredCard.expirationDate)
+    const currentDate = dayjs();
+    const cardIsExpired = cardED.diff(currentDate) < 0;
+    if (cardIsExpired) throw { type: "card is expired", code: 401 };
+
+    if (registeredCard.password !== null) throw { type: "card is already active", code: 409 };
+
+    const cardCVCisWrong = cryptr.decrypt(registeredCard.securityCode) !== cardCVC;
+    if (cardCVCisWrong) throw { type: "security code is wrong", code: 401 };
+
+    const hashedPassword = bcrypt.hashSync(password, 10);
+
+    await update(cardId, hashedPassword);
 }

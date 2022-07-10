@@ -3,8 +3,9 @@ import { Request, Response, NextFunction } from "express";
 import { findByTypeAndEmployeeId, TransactionTypes } from "../repositories/cardRepository.js";
 import { findByApiKey } from "../repositories/companyRepository.js";
 import { findByEmployeeIdAndCompanyId } from "../repositories/employeeRepository.js";
+import { cardDataSchema } from "../schemas/cardsSchemas.js";
 
-export async function validateDataAndAvailability(req: Request, res: Response, next: NextFunction) {
+export async function validationForCreation(req: Request, res: Response, next: NextFunction) {
     const companyKey = req.headers[`x-api-key`].toString();
 
     const { employeeId, cardType }: { employeeId: number, cardType: TransactionTypes } = req.body;
@@ -23,5 +24,12 @@ export async function validateDataAndAvailability(req: Request, res: Response, n
 
     res.locals.employee = employee;
 
+    next();
+}
+
+export async function validationForActivation(req: Request, res: Response, next: NextFunction) {
+    const validation = cardDataSchema.validate(req.body);
+    if (validation.error) throw { type: "card info format is wrong", code: 422 }
+    
     next();
 }

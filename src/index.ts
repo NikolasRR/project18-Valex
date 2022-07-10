@@ -4,8 +4,8 @@ import cors from "cors";
 import chalk from "chalk";
 import "express-async-errors";
 
-import cardsRouter from "./routes/cardsRouter.js";
 import errorHandler from "./middlewares/errorHandler.js";
+import router from "./routes/router.js";
 
 dotenv.config();
 
@@ -13,7 +13,7 @@ const app = express();
 
 app.use(json());
 app.use(cors());
-app.use(cardsRouter);
+app.use(router);
 app.use(errorHandler);
 
 const port = process.env.PORT || 5000;

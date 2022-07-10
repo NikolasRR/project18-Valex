@@ -102,21 +102,12 @@ export async function insert(cardData: CardInsertData) {
   );
 }
 
-export async function update(id: number, cardData: CardUpdateData) {
-  const { objectColumns: cardColumns, objectValues: cardValues } =
-    mapObjectToUpdateQuery({
-      object: cardData,
-      offset: 2,
-    });
-
-  db.query(
-    `
+export async function update(id: number, password: string) {
+  db.query(`
     UPDATE cards
-      SET ${cardColumns}
-    WHERE $1=id
-  `,
-    [id, ...cardValues]
-  );
+    SET password = $2, "isBlocked" = false
+    WHERE $1 = id
+  `, [id, password]);
 }
 
 export async function remove(id: number) {

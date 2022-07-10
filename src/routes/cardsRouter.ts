@@ -5,6 +5,8 @@ import * as middleware from "../middlewares/cardsMiddleware.js"
 
 const cardsRouter = Router();
 
-cardsRouter.post('/cards/create',middleware.validateDataAndAvailability, controllers.createCard);
+cardsRouter.post('/cards/create', middleware.validationForCreation, controllers.createCard);
+cardsRouter.post('/cards/activate', middleware.validationForActivation, controllers.activateCard);
+
 
 export default cardsRouter;
