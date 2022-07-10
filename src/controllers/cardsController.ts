@@ -4,12 +4,14 @@ import { TransactionTypes } from "../repositories/cardRepository.js";
 import * as service from "../services/cardServices.js";
 
 export async function createCard(req: Request, res: Response) {
-    const { cardType } : {cardType: TransactionTypes} = req.body;
-    const { employee } = res.locals;
+    const companyKey = req.headers[`x-api-key`].toString();
+    const { employeeId, cardType } : {employeeId: number, cardType: TransactionTypes} = req.body;
 
-    const response = await service.generateCardInfoAndCard(employee, cardType);
+    const employee = await service.verifyCardAvailability(companyKey, employeeId, cardType);
+
+    const cardInfo = await service.generateCardInfoAndCard(employee, cardType);
     
-    res.status(201).send(response);
+    res.status(201).send(cardInfo);
 }
 
 export async function activateCard(req: Request, res: Response) {

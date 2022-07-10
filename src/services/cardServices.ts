@@ -3,9 +3,24 @@ import dayjs from "dayjs";
 import Cryptr from "cryptr";
 import bcrypt from "bcrypt";
 
-import { findById, insert, TransactionTypes, update } from "../repositories/cardRepository.js";
-import { response } from "express";
+import { findByTypeAndEmployeeId, findById, insert, TransactionTypes, update } from "../repositories/cardRepository.js";
+import { findByApiKey } from "../repositories/companyRepository.js";
+import { findByEmployeeIdAndCompanyId } from "../repositories/employeeRepository.js";
 
+export async function verifyCardAvailability(companyKey: string, employeeId: number, cardType: TransactionTypes) {
+    if (!companyKey) throw { type: "API Key missing", code: 422 };
+    
+    const company = await findByApiKey(companyKey);
+    if (!company) throw { type: 'company not found', code: 404 };
+
+    const employee = await findByEmployeeIdAndCompanyId(employeeId, company.id);
+    if (!employee) throw { type: 'employee not found or not from company', code: 404 };
+
+    const cardExists = await findByTypeAndEmployeeId(cardType, employeeId);
+    if (cardExists) throw { type: 'employee already has said card', code: 409 };
+
+    return employee;
+}
 
 export async function generateCardInfoAndCard(employee: { fullName: string, id: number }, cardType: TransactionTypes) {
     const cryptr = new Cryptr(process.env.CRYPTR_KEY);
