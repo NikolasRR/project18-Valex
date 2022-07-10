@@ -6,10 +6,11 @@ import bcrypt from "bcrypt";
 import { findByTypeAndEmployeeId, findById, insert, TransactionTypes, update } from "../repositories/cardRepository.js";
 import { findByApiKey } from "../repositories/companyRepository.js";
 import { findByEmployeeIdAndCompanyId } from "../repositories/employeeRepository.js";
+import { verifyBlockAndExpiration } from "../utils/verificationUtils.js";
 
 export async function verifyCardAvailability(companyKey: string, employeeId: number, cardType: TransactionTypes) {
     if (!companyKey) throw { type: "API Key missing", code: 422 };
-    
+
     const company = await findByApiKey(companyKey);
     if (!company) throw { type: 'company not found', code: 404 };
 
@@ -51,25 +52,22 @@ export async function generateCardInfoAndCard(employee: { fullName: string, id: 
         password: null,
         isVirtual: false,
         originalCardId: null,
-        isBlocked: true,
+        isBlocked: false,
         type: cardType,
     };
 
     await insert(cardData);
-    
-    return { number: cardNumber, securityCode: cardCVC }; 
+
+    return { number: cardNumber, securityCode: cardCVC };
 }
 
 export async function verifyAndActivateCard(cardId: number, cardCVC: string, password: string) {
     const cryptr = new Cryptr(process.env.CRYPTR_KEY);
 
     const registeredCard = await findById(cardId);
-    if (!registeredCard) throw { type: "card with suplied ID not found", code: 404 };
+    if (!registeredCard) throw { type: "card not found", code: 404 };
 
-    const cardED = dayjs(registeredCard.expirationDate)
-    const currentDate = dayjs();
-    const cardIsExpired = cardED.diff(currentDate) < 0;
-    if (cardIsExpired) throw { type: "card is expired", code: 401 };
+    verifyBlockAndExpiration(registeredCard);
 
     if (registeredCard.password !== null) throw { type: "card is already active", code: 409 };
 
@@ -78,5 +76,17 @@ export async function verifyAndActivateCard(cardId: number, cardCVC: string, pas
 
     const hashedPassword = bcrypt.hashSync(password, 10);
 
-    await update(cardId, hashedPassword);
+    await update(cardId, { password: hashedPassword });
+}
+
+export async function verifyAndBlockCard(cardId: number, password: string) {
+    const card = await findById(cardId);
+    if (!card) throw { type: "card not found", code: 404 };
+
+    verifyBlockAndExpiration(card);
+
+    const correctPassword = bcrypt.compareSync(password, card.password);
+    if (!correctPassword) throw { type: "incorrect password", code: 401 };
+
+    await update(cardId, { isBlocked: true });
 }

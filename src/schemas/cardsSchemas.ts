@@ -10,3 +10,8 @@ export const cardDataSchema = joi.object({
     cardCVC: joi.string().regex(/^[0-9]{3}$/).required(),
     password: joi.string().regex(/^[0-9]{4}$/).required()
 });
+
+export const IdAndPasswordSchema = joi.object({
+    cardId: joi.number().required(),
+    password: joi.string().required()
+});
