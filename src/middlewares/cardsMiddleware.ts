@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from "express";
-import joi from "joi";
 
 import { cardDataSchema, IdAndPasswordSchema, infoForCardCreationSchema } from "../schemas/cardsSchemas.js";
 

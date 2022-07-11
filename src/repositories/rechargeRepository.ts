@@ -9,7 +9,7 @@ export interface Recharge {
 export type RechargeInsertData = Omit<Recharge, "id" | "timestamp">;
 
 export async function findByCardId(cardId: number) {
-  const result = await connection.query<Recharge, [number]>(
+  const result = await db.query<Recharge, [number]>(
     `SELECT * FROM recharges WHERE "cardId"=$1`,
     [cardId]
   );
@@ -20,7 +20,7 @@ export async function findByCardId(cardId: number) {
 export async function insert(rechargeData: RechargeInsertData) {
   const { cardId, amount } = rechargeData;
 
-  connection.query<any, [number, number]>(
+  db.query<any, [number, number]>(
     `INSERT INTO recharges ("cardId", amount) VALUES ($1, $2)`,
     [cardId, amount]
   );

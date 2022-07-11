@@ -1,4 +1,4 @@
-import { connection } from "../database.js";
+import { db } from "../database.js";
 
 export interface Payment {
   id: number;
@@ -11,7 +11,7 @@ export type PaymentWithBusinessName = Payment & { businessName: string };
 export type PaymentInsertData = Omit<Payment, "id" | "timestamp">;
 
 export async function findByCardId(cardId: number) {
-  const result = await connection.query<PaymentWithBusinessName, [number]>(
+  const result = await db.query<PaymentWithBusinessName, [number]>(
     `SELECT 
       payments.*,
       businesses.name as "businessName"
@@ -28,7 +28,7 @@ export async function findByCardId(cardId: number) {
 export async function insert(paymentData: PaymentInsertData) {
   const { cardId, businessId, amount } = paymentData;
 
-  connection.query<any, [number, number, number]>(
+  db.query<any, [number, number, number]>(
     `INSERT INTO payments ("cardId", "businessId", amount) VALUES ($1, $2, $3)`,
     [cardId, businessId, amount]
   );
