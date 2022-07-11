@@ -33,3 +33,12 @@ export async function insert(paymentData: PaymentInsertData) {
     [cardId, businessId, amount]
   );
 }
+
+export async function paymentsValue(cardId: number) {
+  const result = await db.query(
+    `SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE "cardId"=$1`,
+    [cardId]
+  );
+
+  return result.rows[0];
+}

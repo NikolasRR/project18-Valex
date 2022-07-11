@@ -2,6 +2,8 @@ import dayjs from "dayjs";
 
 import { findById } from "../repositories/cardRepository.js";
 import { findByApiKey } from "../repositories/companyRepository.js";
+import { paymentsValue } from "../repositories/paymentRepository.js";
+import { rechargesValue } from "../repositories/rechargeRepository.js";
 
 export async function getCardInfo(cardId: number) {
     const card = await findById(cardId);
@@ -28,4 +30,13 @@ export async function verifyAPIKey(companyKey: string) {
     if (!company) throw { type: 'company not found', code: 404 };
 
     return company;
+}
+
+export async function verifyCardBalance(cardId: number) {
+    const rechargesAmount = await rechargesValue(cardId);
+    const purchasesAmount = await paymentsValue(cardId);
+    console.log(rechargesAmount, purchasesAmount);
+    
+
+    return parseInt(rechargesAmount.total)- parseInt(purchasesAmount.total);
 }

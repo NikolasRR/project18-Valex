@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 
-export function verifyRechargeValue(req: Request, res: Response, next: NextFunction) {
+export function vaerifyAmount(req: Request, res: Response, next: NextFunction) {
     const { amount }: { amount: number } = req.body;
 
     if (amount > 0) {
