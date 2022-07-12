@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import bcrypt from "bcrypt";
 
 import { findById } from "../repositories/cardRepository.js";
 import { findByApiKey } from "../repositories/companyRepository.js";
@@ -11,7 +12,7 @@ export async function getCardInfo(cardId: number) {
     return card;
 }
 
-export function verifyExpiration(expirationDate: string) {
+export async function verifyExpiration(expirationDate: string) {
     const cardED = dayjs(expirationDate);
     const currentDate = dayjs();
     const cardIsExpired = cardED.diff(currentDate) < 0;
@@ -20,7 +21,7 @@ export function verifyExpiration(expirationDate: string) {
 
 export async function verifyBlockState(isBlocked: boolean, wrongValue: boolean) {
     const UndesiredBlockState = isBlocked === wrongValue;
-    if (UndesiredBlockState) throw { type: `card is already ${wrongValue ? 'blocked' : 'unblocked'}`, code: 409 };
+    if (UndesiredBlockState) throw { type: `card is ${wrongValue ? 'blocked' : 'unblocked'}`, code: 409 };
 }
 
 export async function verifyAPIKey(companyKey: string) {
@@ -35,8 +36,11 @@ export async function verifyAPIKey(companyKey: string) {
 export async function verifyCardBalance(cardId: number) {
     const rechargesAmount = await rechargesValue(cardId);
     const purchasesAmount = await paymentsValue(cardId);
-    console.log(rechargesAmount, purchasesAmount);
-    
 
-    return parseInt(rechargesAmount.total)- parseInt(purchasesAmount.total);
+    return parseInt(rechargesAmount.total) - parseInt(purchasesAmount.total);
+}
+
+export async function verifyPassword(suppliedPassword: string, DBpassword: string) {
+    const correctPassword = bcrypt.compareSync(suppliedPassword, DBpassword);
+    if (!correctPassword) throw { type: "incorrect password", code: 401 };
 }

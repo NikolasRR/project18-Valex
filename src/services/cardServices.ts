@@ -6,7 +6,7 @@ import bcrypt from "bcrypt";
 import { findByTypeAndEmployeeId, findById, insert, TransactionTypes, update } from "../repositories/cardRepository.js";
 import { findByApiKey } from "../repositories/companyRepository.js";
 import { findByEmployeeIdAndCompanyId } from "../repositories/employeeRepository.js";
-import { getCardInfo, verifyAPIKey, verifyBlockState, verifyExpiration } from "../utils/verificationUtils.js";
+import { getCardInfo, verifyAPIKey, verifyBlockState, verifyExpiration, verifyPassword } from "../utils/verificationUtils.js";
 
 export async function verifyCardAvailability(companyKey: string, employeeId: number, cardType: TransactionTypes) {
     const company = await verifyAPIKey(companyKey);
@@ -76,13 +76,12 @@ export async function verifyAndActivateCard(cardId: number, cardCVC: string, pas
 }
 
 export async function verifyAndBlockCard(cardId: number, password: string) {
-    const card = await getCardInfo(cardId);
+    const card = await getCardInfo(cardId);    
 
-    verifyExpiration(card.expirationDate);
-    verifyBlockState(card.isBlocked, false);
+    await verifyExpiration(card.expirationDate);
+    await verifyBlockState(card.isBlocked, true);
 
-    const correctPassword = bcrypt.compareSync(password, card.password);
-    if (!correctPassword) throw { type: "incorrect password", code: 401 };
+    await verifyPassword(password, card.password);
 
     await update(cardId, { isBlocked: true });
 }
@@ -90,8 +89,10 @@ export async function verifyAndBlockCard(cardId: number, password: string) {
 export async function verifyAndUnblockCard(cardId: number, password: string) {
     const card = await getCardInfo(cardId);
 
-    verifyExpiration(card.expirationDate);
-    verifyBlockState(card.isBlocked, true);
+    await verifyExpiration(card.expirationDate);
+    await verifyBlockState(card.isBlocked, false);
+
+    await verifyPassword(password, card.password);
 
     await update(cardId, { isBlocked: false });
 }
